@@ -44,13 +44,6 @@ class Manager(object):
             self.__proxy,
             'org.freedesktop.DBus.Properties')
 
-        self.__properties_interface.connect_to_signal(
-            'PropertiesChanged',
-            self.__on_properties_changed)
-
-        self.__properties()
-
-    def __on_properties_changed(self, *args, **kargs):
         self.__properties()
 
     def __properties(self):
