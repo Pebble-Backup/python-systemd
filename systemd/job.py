@@ -19,6 +19,7 @@
 
 import dbus
 import dbus.mainloop.glib
+
 dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
 from systemd.property import Property
@@ -26,6 +27,7 @@ from systemd.exceptions import SystemdError
 
 class Job(object):
     """Abstraction class to org.freedesktop.systemd1.Job interface"""
+
     def __init__(self, job_path):
         self.__bus = dbus.SystemBus()
         self.__proxy = self.__bus.get_object(
@@ -41,19 +43,12 @@ class Job(object):
             self.__proxy,
             'org.freedesktop.DBus.Properties')
 
-        self.__properties_interface.connect_to_signal(
-            'PropertiesChanged',
-            self.__on_properties_changed)
-
-        self.__properties()
-
-    def __on_properties_changed(self, *args, **kargs):
         self.__properties()
 
     def __properties(self):
         properties = self.__properties_interface.GetAll(
             self.__interface.dbus_interface)
-        attr_property =  Property()
+        attr_property = Property()
         for key, value in properties.items():
             setattr(attr_property, key, value)
         setattr(self, 'properties', attr_property)
@@ -63,3 +58,15 @@ class Job(object):
             self.__interface.Cancel()
         except dbus.exceptions.DBusException, error:
             raise SystemdError(error)
+
+    @staticmethod
+    def if_exists(job_path):
+        try:
+            return Job(job_path)
+        except dbus.exceptions.DBusException as error:
+            error_str = str(error)
+            if "Unknown interface 'org.freedesktop.systemd1.Job'." in error_str:
+                return None
+            if "org.freedesktop.DBus.Error.UnknownObject" in error_str:
+                return None
+            raise
